@@ -11,6 +11,6 @@ A simple script for fetching some deal data from Highrise. Currently, takes a st
 
 Quick Start
 -------------------------------------
-* Copy config-example.py to config.py and replace the dummy date with the real thing.
+* Copy config-example.py to config.py and replace the dummy data with the real thing.
 * Create a directory called "output" in the same folder as the script.
 * Run it.
