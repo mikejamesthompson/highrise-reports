@@ -1,20 +1,27 @@
 import requests
 from bs4 import BeautifulSoup
 
-from datetime import datetime
+from datetime import datetime, time
 import calendar
 
 import csv
+import codecs
 from unicodeutils import UnicodeWriter
 
 import config
+import sys
 
 def formatDealData(deal):
 	"""
 	Take a soupy representation of a deal and transform it into a dictionary of the values we need
 	"""
+	
+	# Date formatting
+	dateCreated = unicode(deal.find('created-at').string)
+	dateCreated = datetime.strptime(dateCreated, '%Y-%m-%dT%H:%M:%SZ')
+	dateCreated = datetime.strftime(dateCreated, '%Y-%m-%d')
 
-	# This function uses dictionaries defined in the config module to map category ids
+	# This bit uses dictionaries defined in the config module to map category ids
 	# and responsible party ids to their names
 	d = {'name': unicode(deal.find('name').string),
 		'status': unicode(deal.find('status').string),
@@ -23,7 +30,7 @@ def formatDealData(deal):
 		'value': unicode(deal.find('price').string),
 		'category': unicode(config.CATEGORIES[deal.find('category-id').string]),
 		'owner': unicode(config.STAFF[deal.find('responsible-party-id').string]),	
-		'date_created': unicode(deal.find('created-at').string)
+		'date_created': dateCreated
 		}
 
 	return d
@@ -32,6 +39,7 @@ def formatDealData(deal):
 def writeCSV(filename, deals):
 	
 	file = open('output/'+filename, 'wb')
+	file.write(codecs.BOM_UTF8)
 	writer = UnicodeWriter(file, delimiter=',')
 	
 	# Write CSV column headings
@@ -51,7 +59,7 @@ def getDeals(startDate = '01 Jul 2013'):
 	quarterStart = datetime.strptime(startDate, '%d %b %Y')
 	quarterEnd = quarterStart.replace(month = quarterStart.month+2)
 	quarterEnd = quarterEnd.replace(day = calendar.monthrange(quarterEnd.year, quarterEnd.month)[1])
-	quarterEnd = datetime.combine(quarterEnd.date(), datetime.time("23","59","59"))
+	quarterEnd = datetime.combine(quarterEnd.date(), time(23, 59, 59))
 
 	# Form URL
 	domain = "https://mysociety.highrisehq.com"
@@ -72,7 +80,6 @@ def getDeals(startDate = '01 Jul 2013'):
 	soup = BeautifulSoup(response.text, 'xml')
 
 	# We need deals created in this quarter, deals won in this quarter and deals lost in this quarter
-	allDeals = []
 	newDeals = []
 	wonDeals = []
 	lostDeals = []
@@ -80,8 +87,6 @@ def getDeals(startDate = '01 Jul 2013'):
 	deals = soup.findAll('deal')
 
 	for deal in deals:
-
-		allDeals.append(formatDealData(deal))
 
 		# Extract date create for comparison later
 		dateCreated = datetime.strptime(deal.find('created-at').string, '%Y-%m-%dT%H:%M:%SZ')
@@ -109,7 +114,7 @@ def getDeals(startDate = '01 Jul 2013'):
 			continue
 
 	# Write contents of the three variables to three corresponding CSVs
-	for segment in [("allDeals.csv", allDeals), ("wonDeals.csv", wonDeals), ("lostDeals.csv", lostDeals), ("newdeals.csv",newDeals)]:
+	for segment in [("wonDeals.csv", wonDeals), ("lostDeals.csv", lostDeals), ("newdeals.csv",newDeals)]:
 		writeCSV(segment[0], segment[1])
 
 	return allDeals
