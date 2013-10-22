@@ -25,7 +25,7 @@ def formatDealData(deal):
 	# and responsible party ids to their names
 	d = {'name': unicode(deal.find('name').string),
 		'status': unicode(deal.find('status').string),
-		'status-changed': unicode(deal.find('status-changed-on').string),
+		'status_changed': unicode(deal.find('status-changed-on').string),
 		'background': unicode(deal.find('background').string),
 		'value': unicode(deal.find('price').string),
 		'category': unicode(config.CATEGORIES[deal.find('category-id').string]),
