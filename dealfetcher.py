@@ -51,6 +51,7 @@ def getDeals(startDate = '01 Jul 2013'):
 	quarterStart = datetime.strptime(startDate, '%d %b %Y')
 	quarterEnd = quarterStart.replace(month = quarterStart.month+2)
 	quarterEnd = quarterEnd.replace(day = calendar.monthrange(quarterEnd.year, quarterEnd.month)[1])
+	quarterEnd = datetime.combine(quarterEnd.date(), datetime.time("23","59","59"))
 
 	# Form URL
 	domain = "https://mysociety.highrisehq.com"
