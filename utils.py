@@ -1,4 +1,30 @@
+
 import csv, codecs, cStringIO
+from datetime import datetime, time
+
+def setDates(startDate, endDate):
+    # Set dates
+    quarterStart = datetime.strptime(startDate, '%d %b %Y')
+    quarterEnd = datetime.strptime(endDate, '%d %b %Y')
+    quarterEnd = datetime.combine(quarterEnd.date(), time(23, 59, 59))
+    return quarterStart, quarterEnd
+
+def writeCSV(filename, data):
+    
+    file = open('output/'+filename, 'wb')
+    file.write(codecs.BOM_UTF8)
+    writer = UnicodeWriter(file, delimiter=',')
+    
+    # Write CSV column headings
+    writer.writerow(data[0].keys())
+    
+    # Write rows
+    for row in data:
+        writer.writerow(row.values())
+
+    file.close()
+    return True
+
 
 class UTF8Recoder:
     """

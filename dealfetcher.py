@@ -1,42 +1,24 @@
-import requests
-from bs4 import BeautifulSoup
-
 from datetime import datetime, time
-import calendar
-
-import csv
-import codecs
-from unicodeutils import UnicodeWriter
 
 import config
+import highriser
+import utils
+
 import sys
 
 
-def getDeals(startDate = '01 Jul 2013'):
-	
+def getDeals(startDate = '01 Jul 2013', endDate = '30 Sep 2013'):
+
 	# Set dates
-	quarterStart = datetime.strptime(startDate, '%d %b %Y')
-	quarterEnd = quarterStart.replace(month = quarterStart.month + 2)
-	quarterEnd = quarterEnd.replace(day = calendar.monthrange(quarterEnd.year, quarterEnd.month)[1])
-	quarterEnd = datetime.combine(quarterEnd.date(), time(23, 59, 59))
+	quarterStart, quarterEnd = utils.setDates(startDate, endDate)
 
 	# Form URL
-	domain = "https://mysociety.highrisehq.com"
 	path = "/deals.xml"
-	parameters = "?since=" + quarterStart.strftime("%Y%m%d%H%M%S")
-	url = domain + path + parameters
+	parameters = "?since=" + datetime.strptime(startDate, "%d %b %Y").strftime("%Y%m%d%H%M%S")
+	url = config.DOMAIN + path + parameters
 
-	# Set request parameters
-	headers = {'User-Agent': config.USER_AGENT}
-	auth = (config.AUTH_TOKEN,'x')
-
-	# Fetch XML
-	response = requests.get(url, auth = auth, headers = headers)
-	
-	if(response.status_code != requests.codes.ok):
-		sys.exit('Request failed')
-
-	soup = BeautifulSoup(response.text, 'xml')
+	# Get soouuup
+	soup = highriser.getHighriseSoup(url)
 
 	# We need deals created in this quarter, deals won in this quarter and deals lost in this quarter
 	newDeals = []
@@ -47,7 +29,7 @@ def getDeals(startDate = '01 Jul 2013'):
 
 	for deal in deals:
 
-		# Extract date create for comparison later
+		# Extract date created for comparison later
 		dateCreated = datetime.strptime(deal.find('created-at').string, '%Y-%m-%dT%H:%M:%SZ')
 		
 		# Extract date of any status change for comparison later
@@ -100,30 +82,13 @@ def formatDealData(deal):
 	return d
 
 
-def writeCSV(filename, deals):
-	
-	file = open('output/'+filename, 'wb')
-	file.write(codecs.BOM_UTF8)
-	writer = UnicodeWriter(file, delimiter=',')
-	
-	# Write CSV column headings
-	writer.writerow(deals[0].keys())
-	
-	# Write rows
-	for deal in deals:
-		writer.writerow(deal.values())
-
-	file.close()
-	return True
-
-
 if __name__ == "__main__":
 	
 	new, won, lost = getDeals()	
 	
 	# Write contents of the three variables to three corresponding CSVs
 	for segment in [("wonDeals.csv", won), ("lostDeals.csv", lost), ("newdeals.csv",new)]:
-		writeCSV(segment[0], segment[1])
+		utils.writeCSV(segment[0], segment[1])
 	
 
 
