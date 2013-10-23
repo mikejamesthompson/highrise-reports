@@ -11,53 +11,12 @@ from unicodeutils import UnicodeWriter
 import config
 import sys
 
-def formatDealData(deal):
-	"""
-	Take a soupy representation of a deal and transform it into a dictionary of the values we need
-	"""
-	
-	# Date formatting
-	dateCreated = unicode(deal.find('created-at').string)
-	dateCreated = datetime.strptime(dateCreated, '%Y-%m-%dT%H:%M:%SZ')
-	dateCreated = datetime.strftime(dateCreated, '%Y-%m-%d')
-
-	# This bit uses dictionaries defined in the config module to map category ids
-	# and responsible party ids to their names
-	d = {'name': unicode(deal.find('name').string),
-		'status': unicode(deal.find('status').string),
-		'status_changed': unicode(deal.find('status-changed-on').string),
-		'background': unicode(deal.find('background').string),
-		'value': unicode(deal.find('price').string),
-		'category': unicode(config.CATEGORIES[deal.find('category-id').string]),
-		'owner': unicode(config.STAFF[deal.find('responsible-party-id').string]),	
-		'date_created': dateCreated
-		}
-
-	return d
-
-
-def writeCSV(filename, deals):
-	
-	file = open('output/'+filename, 'wb')
-	file.write(codecs.BOM_UTF8)
-	writer = UnicodeWriter(file, delimiter=',')
-	
-	# Write CSV column headings
-	writer.writerow(deals[0].keys())
-	
-	# Write rows
-	for d in deals:
-		writer.writerow(d.values())
-
-	file.close()
-	return True
-
 
 def getDeals(startDate = '01 Jul 2013'):
 	
 	# Set dates
 	quarterStart = datetime.strptime(startDate, '%d %b %Y')
-	quarterEnd = quarterStart.replace(month = quarterStart.month+2)
+	quarterEnd = quarterStart.replace(month = quarterStart.month + 2)
 	quarterEnd = quarterEnd.replace(day = calendar.monthrange(quarterEnd.year, quarterEnd.month)[1])
 	quarterEnd = datetime.combine(quarterEnd.date(), time(23, 59, 59))
 
@@ -113,16 +72,58 @@ def getDeals(startDate = '01 Jul 2013'):
 		else:
 			continue
 
-	# Write contents of the three variables to three corresponding CSVs
-	for segment in [("wonDeals.csv", wonDeals), ("lostDeals.csv", lostDeals), ("newdeals.csv",newDeals)]:
-		writeCSV(segment[0], segment[1])
+	return (newDeals, wonDeals, lostDeals)
 
-	return allDeals
+
+def formatDealData(deal):
+	"""
+	Take a soupy representation of a deal and transform it into a dictionary of the values we need
+	"""
+	
+	# Date formatting
+	dateCreated = unicode(deal.find('created-at').string)
+	dateCreated = datetime.strptime(dateCreated, '%Y-%m-%dT%H:%M:%SZ')
+	dateCreated = datetime.strftime(dateCreated, '%Y-%m-%d')
+
+	# This bit makes use of dictionaries defined in the config module to map category ids
+	# and responsible party ids to their names
+	d = {'name': unicode(deal.find('name').string),
+		'status': unicode(deal.find('status').string),
+		'status_changed': unicode(deal.find('status-changed-on').string),
+		'background': unicode(deal.find('background').string),
+		'value': unicode(deal.find('price').string),
+		'category': unicode(config.CATEGORIES[deal.find('category-id').string]),
+		'owner': unicode(config.STAFF[deal.find('responsible-party-id').string]),	
+		'date_created': dateCreated
+		}
+
+	return d
+
+
+def writeCSV(filename, deals):
+	
+	file = open('output/'+filename, 'wb')
+	file.write(codecs.BOM_UTF8)
+	writer = UnicodeWriter(file, delimiter=',')
+	
+	# Write CSV column headings
+	writer.writerow(deals[0].keys())
+	
+	# Write rows
+	for deal in deals:
+		writer.writerow(deal.values())
+
+	file.close()
+	return True
 
 
 if __name__ == "__main__":
-	ds = getDeals()	
-	print ds
+	
+	new, won, lost = getDeals()	
+	
+	# Write contents of the three variables to three corresponding CSVs
+	for segment in [("wonDeals.csv", won), ("lostDeals.csv", lost), ("newdeals.csv",new)]:
+		writeCSV(segment[0], segment[1])
 	
 
 
