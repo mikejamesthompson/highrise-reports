@@ -5,6 +5,7 @@ from datetime import datetime, time
 def setDates(startDate, endDate):
     # Set dates
     quarterStart = datetime.strptime(startDate, '%d %b %Y')
+    quarterStart = datetime.combine(quarterStart.date(), time(00, 00, 00))
     quarterEnd = datetime.strptime(endDate, '%d %b %Y')
     quarterEnd = datetime.combine(quarterEnd.date(), time(23, 59, 59))
     return quarterStart, quarterEnd

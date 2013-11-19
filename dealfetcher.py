@@ -7,7 +7,7 @@ import utils
 import sys
 
 
-def getDeals(startDate = '01 Jul 2013', endDate = '30 Sep 2013'):
+def getDeals(report = 'won', startDate = '01 Jul 2013', endDate = '30 Sep 2013'):
 
 	# Set dates
 	quarterStart, quarterEnd = utils.setDates(startDate, endDate)
@@ -41,10 +41,10 @@ def getDeals(startDate = '01 Jul 2013', endDate = '30 Sep 2013'):
 		dateStatusChanged = datetime.strptime(statusChanged, '%Y-%m-%d')
 
 		# New deals
-		if(dateCreated > quarterStart and dateCreated < quarterEnd):
+		if(dateCreated >= quarterStart and dateCreated <= quarterEnd):
 			newDeals.append(formatDealData(deal)) 
 
-		if(dateStatusChanged > quarterStart and dateStatusChanged < quarterEnd):
+		if(dateStatusChanged >= quarterStart and dateStatusChanged <= quarterEnd):
 			# Won deals
 			if(deal.status.string == 'won'):
 				wonDeals.append(formatDealData(deal))
@@ -54,7 +54,14 @@ def getDeals(startDate = '01 Jul 2013', endDate = '30 Sep 2013'):
 		else:
 			continue
 
-	return (newDeals, wonDeals, lostDeals)
+	if(report == 'won'):
+		return wonDeals
+	elif(report == 'lost'):
+		return lostDeals
+	elif(report == 'new'):
+		return newDeals
+	else:
+		return False
 
 
 def formatDealData(deal):
@@ -83,12 +90,9 @@ def formatDealData(deal):
 
 
 if __name__ == "__main__":
-	
-	new, won, lost = getDeals()	
-	
-	# Write contents of the three variables to three corresponding CSVs
-	for segment in [("wonDeals.csv", won), ("lostDeals.csv", lost), ("newdeals.csv",new)]:
-		utils.writeCSV(segment[0], segment[1])
+	report, start, end = sys.argv[1], sys.argv[2], sys.argv[3]
+	deals = getDeals(report, start, end)	
+	utils.writeCSV(report+'.csv', deals)
 	
 
 
