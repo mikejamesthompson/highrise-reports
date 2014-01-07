@@ -69,6 +69,9 @@ def formatDealData(deal):
 	Take a soupy representation of a deal and transform it into a dictionary of the values we need
 	"""
 	
+	# Get relevant metadata from highrise
+	users, categories, tags = highriser.getMetadata()
+
 	# Date formatting
 	dateCreated = unicode(deal.find('created-at').string)
 	dateCreated = datetime.strptime(dateCreated, '%Y-%m-%dT%H:%M:%SZ')
@@ -81,8 +84,8 @@ def formatDealData(deal):
 		'status_changed': unicode(deal.find('status-changed-on').string),
 		'background': unicode(deal.find('background').string),
 		'value': unicode(deal.find('price').string),
-		'category': unicode(config.CATEGORIES[deal.find('category-id').string]),
-		'owner': unicode(config.STAFF[deal.find('responsible-party-id').string]),	
+		'category': unicode(categories[deal.find('category-id').string]),
+		'owner': unicode(users[deal.find('responsible-party-id').string]),	
 		'date_created': dateCreated
 		}
 
