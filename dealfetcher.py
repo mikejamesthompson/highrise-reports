@@ -9,6 +9,9 @@ import sys
 
 def getDeals(report = 'won', startDate = '01 Jul 2013', endDate = '30 Sep 2013'):
 
+	# Get relevant metadata from highrise
+	users, categories, tags = highriser.getMetadata()
+
 	# Set dates
 	quarterStart, quarterEnd = utils.setDates(startDate, endDate)
 
@@ -42,15 +45,15 @@ def getDeals(report = 'won', startDate = '01 Jul 2013', endDate = '30 Sep 2013')
 
 		# New deals
 		if(dateCreated >= quarterStart and dateCreated <= quarterEnd):
-			newDeals.append(formatDealData(deal)) 
+			newDeals.append(highriser.formatDealData(deal, users, categories)) 
 
 		if(dateStatusChanged >= quarterStart and dateStatusChanged <= quarterEnd):
 			# Won deals
 			if(deal.status.string == 'won'):
-				wonDeals.append(formatDealData(deal))
+				wonDeals.append(highriser.formatDealData(deal, users, categories))
 			# Lost deals
 			elif(deal.status.string == 'lost'):
-				lostDeals.append(formatDealData(deal))
+				lostDeals.append(highriser.formatDealData(deal, users, categories))
 		else:
 			continue
 
@@ -62,34 +65,6 @@ def getDeals(report = 'won', startDate = '01 Jul 2013', endDate = '30 Sep 2013')
 		return newDeals
 	else:
 		return False
-
-
-def formatDealData(deal):
-	"""
-	Take a soupy representation of a deal and transform it into a dictionary of the values we need
-	"""
-	
-	# Get relevant metadata from highrise
-	users, categories, tags = highriser.getMetadata()
-
-	# Date formatting
-	dateCreated = unicode(deal.find('created-at').string)
-	dateCreated = datetime.strptime(dateCreated, '%Y-%m-%dT%H:%M:%SZ')
-	dateCreated = datetime.strftime(dateCreated, '%Y-%m-%d')
-
-	# This bit makes use of dictionaries defined in the config module to map category ids
-	# and responsible party ids to their names
-	d = {'name': unicode(deal.find('name').string),
-		'status': unicode(deal.find('status').string),
-		'status_changed': unicode(deal.find('status-changed-on').string),
-		'background': unicode(deal.find('background').string),
-		'value': unicode(deal.find('price').string),
-		'category': unicode(categories[deal.find('category-id').string]),
-		'owner': unicode(users[deal.find('responsible-party-id').string]),	
-		'date_created': dateCreated
-		}
-
-	return d
 
 
 if __name__ == "__main__":

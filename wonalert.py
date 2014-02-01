@@ -1,5 +1,10 @@
+# coding: utf-8
 import time
-import os.path
+from datetime import datetime
+import os
+
+import smtplib
+from email.mime.text import MIMEText
 
 import config
 import highriser
@@ -12,32 +17,28 @@ def getDeals():
 
 	# Get last checked date
 	lastChecked = os.path.getmtime("date-indicator")
-	since = time.strftime("%Y%m%d%H%M%S", time.gmtime(time))
+	sinceDate = datetime.fromtimestamp(lastChecked)
+
+	# Change modification date here
+	utils.touch("date-indicator")
 
 	# Form URL
 	path = "/deals.xml"
-	parameters = "?since=" + since
+	parameters = "?since=20131201000000"
+	# parameters = "?since=" + sinceDate.strftime("%Y%m%d%H%M%S")
 	url = config.DOMAIN + path + parameters
-
-	print url
-	sys.exit()
 
 	# Get soouuup
 	soup = highriser.getHighriseSoup(url)
 
-	# We need deals created in this quarter, deals won in this quarter and deals lost in this quarter
-	newDeals = []
+	# We need just deals marked as won since lastChecked
 	wonDeals = []
-	lostDeals = []
 
 	deals = soup.findAll('deal')
 
 	for deal in deals:
-
-		# Extract date created for comparison later
-		dateCreated = datetime.strptime(deal.find('created-at').string, '%Y-%m-%dT%H:%M:%SZ')
 		
-		# Extract date of any status change for comparison later
+		# Extract date of any status change for comparison 
 		if(deal.find('status-changed-on').string):
 			statusChanged = deal.find('status-changed-on').string
 		else:
@@ -45,29 +46,33 @@ def getDeals():
 		
 		dateStatusChanged = datetime.strptime(statusChanged, '%Y-%m-%d')
 
-		# New deals
-		if(dateCreated >= quarterStart and dateCreated <= quarterEnd):
-			newDeals.append(formatDealData(deal)) 
-
-		if(dateStatusChanged >= quarterStart and dateStatusChanged <= quarterEnd):
+		if(dateStatusChanged >= datetime.strptime("2013-12-01", '%Y-%m-%d')):
 			# Won deals
 			if(deal.status.string == 'won'):
-				wonDeals.append(formatDealData(deal))
-			# Lost deals
-			elif(deal.status.string == 'lost'):
-				lostDeals.append(formatDealData(deal))
+				wonDeals.append(highriser.formatDealData(deal))
 		else:
 			continue
 
-	if(report == 'won'):
-		return wonDeals
-	elif(report == 'lost'):
-		return lostDeals
-	elif(report == 'new'):
-		return newDeals
-	else:
-		return False
+	emailAlerts(wonDeals)
+
+	return wonDeals
+
+
+def emailAlerts(deals):
+	
+	for deal in deals:
+		message = MIMEText(deal['name'] + "\n\n" + deal['background'] + "\n\nCategory: " + deal['category'] + "\nOwner: " + deal['owner'])
+		message['Subject']='We\'ve won ' + deal['name']+u', worth: £'+deal['value']+'!'
+		message['From'] = 'mike@mysociety.org'
+		message['To'] = 'mike@mysociety.org'
+
+		s = smtplib.SMTP('localhost')
+		s.sendmail('bounce@mysociety.org', ['mike@mysociety.org'], message.as_string())
+		s.quit()
+
+	return True
 
 
 if __name__ == "__main__":
-	getDeals()
+
+	print getDeals()

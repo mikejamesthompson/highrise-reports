@@ -1,4 +1,5 @@
 
+import os
 import csv, codecs, cStringIO
 from datetime import datetime, time
 
@@ -26,6 +27,9 @@ def writeCSV(filename, data):
     file.close()
     return True
 
+def touch(filename, times=None):
+    with file(filename, 'a'):
+        os.utime(filename, times)
 
 class UTF8Recoder:
     """

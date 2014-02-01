@@ -52,3 +52,28 @@ def getMetadata():
 		tagsDict[unicode(tag.find('id').string)] = unicode(tag.find('name').string)	
 
 	return userDict, categoriesDict, tagsDict
+
+
+def formatDealData(deal):
+	"""
+	Take a soupy representation of a deal and transform it into a dictionary of the values we need
+	"""
+
+	# Date formatting
+	dateCreated = unicode(deal.find('created-at').string)
+	dateCreated = datetime.strptime(dateCreated, '%Y-%m-%dT%H:%M:%SZ')
+	dateCreated = datetime.strftime(dateCreated, '%Y-%m-%d')
+
+	# This bit makes use of dictionaries defined in the config module to map category ids
+	# and responsible party ids to their names
+	d = {'name': unicode(deal.find('name').string),
+		'status': unicode(deal.find('status').string),
+		'status_changed': unicode(deal.find('status-changed-on').string),
+		'background': unicode(deal.find('background').string),
+		'value': unicode(deal.find('price').string),
+		'category': unicode(categories[deal.find('category-id').string]),
+		'owner': unicode(users[deal.find('responsible-party-id').string]),	
+		'date_created': dateCreated
+		}
+
+	return d
