@@ -3,3 +3,6 @@
 .DS_Store
 output/*
 config.py
+peoplefetcher.py
+wonalert.py
+date-indicator
